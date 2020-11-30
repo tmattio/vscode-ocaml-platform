@@ -1,6 +1,6 @@
 {
-  "name": "ocaml-platform",
-  "displayName": "OCaml Platform",
+  "name": "ocaml",
+  "displayName": "OCaml",
   "description": "Official OCaml Support from OCamlLabs",
   "license": "MIT",
   "version": "1.5.1",
