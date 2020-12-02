@@ -46,38 +46,13 @@ val select_sandbox_and_save : unit -> t option Promise.t
     the sandbox configuration *)
 val select_sandbox : unit -> t option Promise.t
 
-(** [run_setup] is an effectful function that triggers setup instructions
-    automatically for the user. At present, this functionality resides in the
-    plugin itself for bucklescript users - to reliably use ocamllsp for
-    bucklescript users, a sandboxed environment provides a reliable way to setup
-    the OCaml sandbox.
-    {{:https://github.com/prometheansacrifice/esy-mode#npm-and-bucklescript-build-system-managed-projects}
-    More details} We use Esy to provide
-
-    1. A scrubbed environment with just OCaml tools in it - this is necessary
-    since OCaml tools are closely tied to compiler versions and look into the
-    global environments to find plugins (Eg. Merlin and Reason) 2. Relocatable
-    assets so that users can download the sandbox artifacts and compile it from
-    source in the same workflow.
-
-    [run_setup] is capable of setting up the sandbox for bucklescript project
-    using both Opam and Esy users. It provides and abstracted way to setup the
-    sandbox, so that we (developers) have the flexibility to iterate and improve
-    how the sandbox it provided.
-
-    A hard requirement for [run_setup] is to not get in the way to existing
-    setups. If users already have working sandboxes installed via some other
-    sandbox/package manager (Nix, system wide managers like yum/apt/brew or
-    Duniverse), [run_setup] must co-operate and detect such installations. *)
-val run_setup : t -> (unit, string) result Promise.t
-
 (* Helper utils *)
 
 (** Extract command to run with the sandbox *)
 val get_command : t -> string -> string list -> Cmd.t
 
-(** Extract lsp command and arguments *)
-val get_lsp_command : ?args:string list -> t -> Cmd.t
+(** Command to install dependencies in the sandbox *)
+val get_install_command : t -> string list -> Cmd.t option
 
-(** Extract a dune command *)
-val get_dune_command : t -> string list -> Cmd.t
+(** Command to exec a process in the sandbox *)
+val get_exec_command : t -> string list -> Cmd.t option

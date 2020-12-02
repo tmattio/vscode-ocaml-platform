@@ -25,6 +25,7 @@ let activate (extension : ExtensionContext.t) =
   Extension_commands.register_all_commands extension instance;
   Dune_formatter.register extension instance;
   Dune_task_provider.register extension instance;
+  let toolchain = Toolchain.setup () in
   let sandbox = Sandbox.of_settings_or_detect () in
   let (_ : unit Promise.t) =
     let* sandbox = sandbox in
@@ -47,6 +48,8 @@ let activate (extension : ExtensionContext.t) =
     let* sandbox = sandbox in
     let sandbox = Option.value sandbox ~default:Sandbox.Global in
     Extension_instance.set_sandbox instance sandbox;
+    let* toolchain = toolchain in
+    Option.iter toolchain ~f:(Extension_instance.set_toolchain instance);
     let+ () = Extension_instance.start_language_server instance in
     ()
   in

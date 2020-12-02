@@ -1,14 +1,17 @@
 open Import
 
-(* Terminology: - Sandbox: represents supported sandboxes with Global as the
-   fallback - project_root is different from Package_manager root (Eg. Opam
+(* Terminology:
+
+   - Sandbox: represents supported sandboxes with Global as the fallback
+
+   - project_root is different from Package_manager root (Eg. Opam
    (Path.of_string "/foo/bar")). Project root is the directory where manifest
    file (opam/esy.json/package.json) was found. Package_manager root is the
    directory that contains the manifest file responsible for setting up the
-   sandbox - the two are same for Esy and Opam project but different for
-   bucklescript. Bucklescript projects have this manifest file abstracted away
-   from the user (at least at the moment) - Manifest: abstracts functions
-   handling manifest files of the supported package managers *)
+   sandbox
+
+   - Manifest: abstracts functions handling manifest files of the supported
+   package managers *)
 
 type t =
   | Opam of Opam.t * Opam.Switch.t
@@ -182,6 +185,15 @@ let of_settings () : t option Promise.t =
   | Some Global -> Promise.return (Some Global)
   | Some (Custom template) -> Promise.return (Some (Custom template))
 
+let workspace_root () =
+  match Workspace.workspaceFolders () with
+  | [] -> None
+  | [ workspace_folder ] ->
+    Some (workspace_folder |> WorkspaceFolder.uri |> Uri.path |> Path.of_string)
+  | _ ->
+    (* We don't support multiple workspace roots at the moment *)
+    None
+
 let detect_esy_sandbox ~project_root esy () =
   let open Promise.Option.Syntax in
   let* esy = esy in
@@ -218,22 +230,15 @@ let detect_opam_sandbox ~project_root opam () =
   Opam (opam, switch)
 
 let detect () =
-  match Workspace.workspaceFolders () with
-  | [] -> Promise.return None
-  | [ workspace_folder ] ->
-    let project_root =
-      workspace_folder |> WorkspaceFolder.uri |> Uri.path |> Path.of_string
-    in
-    let available = available_sandboxes () in
-    Promise.List.find_map
-      (fun f -> f ())
-      [ detect_opam_local_switch ~project_root available.opam
-      ; detect_esy_sandbox ~project_root available.esy
-      ; detect_opam_sandbox ~project_root available.opam
-      ]
-  | _ ->
-    (* If there are several workspace folders, skip the detection entirely. *)
-    Promise.return None
+  let open Promise.Option.Syntax in
+  let* project_root = workspace_root () |> Promise.return in
+  let available = available_sandboxes () in
+  Promise.List.find_map
+    (fun f -> f ())
+    [ detect_opam_local_switch ~project_root available.opam
+    ; detect_esy_sandbox ~project_root available.esy
+    ; detect_opam_sandbox ~project_root available.opam
+    ]
 
 let of_settings_or_detect () =
   let open Promise.Syntax in
@@ -346,14 +351,6 @@ let sandbox_candidates ~workspace_folders =
   let+ esy, opam = Promise.all2 (esy, opam) in
   (global :: custom :: esy) @ opam
 
-let setup_sandbox (kind : t) =
-  match kind with
-  | Esy (esy, manifest) -> Esy.setup_sandbox esy ~manifest
-  | Opam _
-  | Global
-  | Custom _ ->
-    Promise.Result.return ()
-
 let select_sandbox () =
   let open Promise.Syntax in
   let workspace_folders = Workspace.workspaceFolders () in
@@ -413,24 +410,15 @@ let get_command sandbox bin args : Cmd.t =
     in
     Shell command
 
-let get_lsp_command ?(args = []) sandbox : Cmd.t =
-  get_command sandbox "ocamllsp" args
+let get_install_command sandbox tools =
+  match sandbox with
+  | Opam (opam, switch) ->
+    Some (Opam.install opam ~switch ~args:("-y" :: tools))
+  | Esy (esy, manifest) -> Some (Esy.install esy ~manifest ~args:tools)
+  | _ -> None
 
-let get_dune_command sandbox args : Cmd.t = get_command sandbox "dune" args
-
-let run_setup sandbox =
-  let open Promise.Syntax in
-  let+ output =
-    let open Promise.Result.Syntax in
-    let* () = setup_sandbox sandbox in
-    let args = [ "--version" ] in
-    let* command = Cmd.check (get_lsp_command sandbox ~args) in
-    Cmd.output command
-  in
-  match output with
-  | Ok _ -> Ok ()
-  | Error msg ->
-    (* TODO: if ocamllsp not found, suggest to install it on press of a button;
-       consider checking and suggesting installation for other tools: formatter,
-       etc. *)
-    Error (Printf.sprintf "Sandbox initialisation failed: %s" msg)
+let get_exec_command sandbox tools =
+  match sandbox with
+  | Opam (opam, switch) -> Some (Opam.exec opam ~switch ~args:tools)
+  | Esy (esy, manifest) -> Some (Esy.exec esy ~manifest ~args:tools)
+  | _ -> None

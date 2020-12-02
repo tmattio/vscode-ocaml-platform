@@ -1859,8 +1859,8 @@ module Window : sig
 
   val withProgress :
        options:ProgressOptions.t
-    -> task:(progress:Progress.t -> token:CancellationToken.t -> 'a)
-    -> 'b
+    -> task:(progress:Progress.t -> token:CancellationToken.t -> 'a Promise.t)
+    -> 'a Promise.t
 
   val createStatusBarItem :
     ?alignment:StatusBarAlignment.t -> ?priority:int -> unit -> StatusBarItem.t

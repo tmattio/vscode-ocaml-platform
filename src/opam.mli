@@ -18,7 +18,11 @@ val switch_list : t -> Switch.t list Promise.t
 
 val switch_show : ?cwd:Path.t -> t -> Switch.t option Promise.t
 
+val switch_create : t -> name:string -> args:string list -> Cmd.t
+
 val exec : t -> switch:Switch.t -> args:string list -> Cmd.t
+
+val install : t -> switch:Switch.t -> args:string list -> Cmd.t
 
 val exists : t -> switch:Switch.t -> bool Promise.t
 

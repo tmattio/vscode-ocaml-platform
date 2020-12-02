@@ -67,6 +67,12 @@ let switch_arg switch = "--switch=" ^ Switch.name switch
 let exec t ~switch ~args =
   Cmd.Spawn (Cmd.append t ("exec" :: switch_arg switch :: "--" :: args))
 
+let install t ~switch ~args =
+  Cmd.Spawn (Cmd.append t ("install" :: switch_arg switch :: args))
+
+let switch_create t ~name ~args =
+  Cmd.Spawn (Cmd.append t ("switch" :: "create" :: name :: args))
+
 let exists t ~switch =
   let open Promise.Syntax in
   let+ switches = switch_list t in

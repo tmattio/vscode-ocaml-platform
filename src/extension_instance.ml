@@ -2,11 +2,14 @@ open Import
 
 type t =
   { mutable sandbox : Sandbox.t
+  ; mutable toolchain : Toolchain.t option
   ; mutable lsp_client : (LanguageClient.t * Ocaml_lsp.t) option
   ; sandbox_info : StatusBarItem.t
   }
 
 let sandbox t = t.sandbox
+
+let toolchain t = t.toolchain
 
 let language_client t = Option.map ~f:fst t.lsp_client
 
@@ -29,8 +32,8 @@ let client_options () =
   LanguageClient.ClientOptions.create ~outputChannel ~revealOutputChannelOn
     ~documentSelector ()
 
-let server_options sandbox =
-  let command = Sandbox.get_lsp_command sandbox in
+let server_options toolchain =
+  let command = Toolchain.get_lsp_command toolchain in
   Cmd.log command;
   match command with
   | Shell command ->
@@ -50,9 +53,12 @@ let start_language_server t =
   stop_server t;
   let res =
     let open Promise.Result.Syntax in
-    let* () = Sandbox.run_setup t.sandbox in
-
-    let serverOptions = server_options t.sandbox in
+    let* serverOptions =
+      match t.toolchain with
+      | None ->
+        Promise.return (Error "No toolchain available to start the server.")
+      | Some toolchain -> Promise.return (Ok (server_options toolchain))
+    in
     let clientOptions = client_options () in
     let client =
       LanguageClient.make ~id:"ocaml" ~name:"OCaml Platform VS Code extension"
@@ -114,7 +120,10 @@ end
 let make () =
   let sandbox = Sandbox.Global in
   let sandbox_info = Sandbox_info.make sandbox in
-  { sandbox; lsp_client = None; sandbox_info }
+  let toolchain = None in
+  { sandbox; lsp_client = None; sandbox_info; toolchain }
+
+let set_toolchain t new_toolchain = t.toolchain <- Some new_toolchain
 
 let set_sandbox t new_sandbox =
   Sandbox_info.update t.sandbox_info ~new_sandbox;

@@ -71,14 +71,30 @@ module ChildProcess : sig
     val create : ?cwd:string -> ?env:string Interop.Dict.t -> unit -> t
   end
 
+  type t
+
   type return =
     { exitCode : int
     ; stdout : string
     ; stderr : string
     }
 
-  val exec : string -> ?stdin:string -> Options.t -> return Promise.t
+  val on : t -> string -> (int -> unit) -> unit
 
-  val spawn :
+  val on_close : t -> (int -> unit) -> unit
+
+  val on_error : t -> (int -> unit) -> unit
+
+  val exec : string -> Options.t -> (return -> unit) -> t
+
+  val exec_return : string -> ?stdin:string -> Options.t -> return Promise.t
+
+  val spawn : string -> string array -> Options.t -> t
+
+  val spawn_return :
     string -> string array -> ?stdin:string -> Options.t -> return Promise.t
+
+  val kill : t -> string -> bool
+
+  val killed : t -> bool
 end
