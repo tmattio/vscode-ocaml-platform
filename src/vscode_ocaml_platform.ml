@@ -25,8 +25,11 @@ let activate (extension : ExtensionContext.t) =
   Extension_commands.register_all_commands extension instance;
   Dune_formatter.register extension instance;
   Dune_task_provider.register extension instance;
-  let toolchain = Toolchain.setup () in
   let sandbox = Sandbox.of_settings_or_detect () in
+  let toolchain =
+    let* sandbox = sandbox in
+    Toolchain.setup ?project_sandbox:sandbox ()
+  in
   let (_ : unit Promise.t) =
     let* sandbox = sandbox in
     let is_fallback = Option.is_empty sandbox in

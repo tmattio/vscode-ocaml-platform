@@ -410,6 +410,14 @@ let get_command sandbox bin args : Cmd.t =
     in
     Shell command
 
+let has_command sandbox bin =
+  let open Promise.Syntax in
+  let cmd = get_command sandbox "which" [ bin ] in
+  let+ result = Cmd.output cmd in
+  match result with
+  | Ok _ -> true
+  | Error _ -> false
+
 let get_install_command sandbox tools =
   match sandbox with
   | Opam (opam, switch) ->

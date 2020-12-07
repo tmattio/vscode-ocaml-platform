@@ -8,21 +8,21 @@
 
 type t
 
-val setup : unit -> t option Promise.t
+val setup : ?project_sandbox:Sandbox.t -> unit -> t option Promise.t
 
 (* Helper utils *)
 
 (** Extract command to run with the sandbox *)
-val get_command : ?args:string list -> t -> string -> Cmd.t
+val get_command : ?args:string list -> t -> string -> Cmd.t Promise.t
 
 (** Extract lsp command and arguments *)
-val get_lsp_command : ?args:string list -> t -> Cmd.t
+val get_lsp_command : ?args:string list -> t -> Cmd.t Promise.t
 
 (** Extract a dune command *)
-val get_dune_command : t -> string list -> Cmd.t
+val get_dune_command : t -> string list -> Cmd.t Promise.t
 
 (** Extract a ocamlformat command and arguments *)
-val get_ocamlformat_command : ?args:string list -> t -> Cmd.t
+val get_ocamlformat_command : ?args:string list -> t -> Cmd.t Promise.t
 
 (** Extract a ocamlc command and arguments *)
-val get_ocamlc_command : ?args:string list -> t -> Cmd.t
+val get_ocamlc_command : ?args:string list -> t -> Cmd.t Promise.t

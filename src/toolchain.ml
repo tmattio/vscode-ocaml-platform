@@ -1,21 +1,30 @@
 open Import
 
-type t = Opam.t * Opam.Switch.t
+type t =
+  { project_sandbox : Sandbox.t option
+  ; opam : Opam.t * Opam.Switch.t
+  }
 
-let get_command ?(args = []) (opam, switch) bin =
-  Opam.exec opam ~switch ~args:(bin :: args)
+let get_command ?(args = []) { opam = opam, switch; project_sandbox } bin =
+  match project_sandbox with
+  | Some sandbox ->
+    let open Promise.Syntax in
+    let+ has_command = Sandbox.has_command sandbox bin in
+    if has_command then
+      Sandbox.get_command sandbox bin args
+    else
+      Opam.exec opam ~switch ~args:(bin :: args)
+  | _ -> Promise.return @@ Opam.exec opam ~switch ~args:(bin :: args)
 
 module Tool = struct
-  let lsp_command ?args toolchain : Cmd.t =
-    get_command toolchain "ocamllsp" ?args
+  let lsp_command ?args toolchain = get_command toolchain "ocamllsp" ?args
 
-  let dune_command toolchain args : Cmd.t = get_command toolchain "dune" ~args
+  let dune_command toolchain args = get_command toolchain "dune" ~args
 
-  let ocamlformat_command ?args toolchain : Cmd.t =
+  let ocamlformat_command ?args toolchain =
     get_command toolchain "ocamlformat" ?args
 
-  let ocamlc_command ?args toolchain : Cmd.t =
-    get_command toolchain "ocamlc" ?args
+  let ocamlc_command ?args toolchain = get_command toolchain "ocamlc" ?args
 
   let all toolchain =
     [ ("ocaml-base-compiler", ocamlc_command toolchain ~args:[ "--version" ])
@@ -36,7 +45,10 @@ module Tool = struct
 
   let detect_missing toolchain =
     all toolchain
-    |> List.map ~f:(fun (binary, cmd) -> missing_command_opt binary cmd)
+    |> List.map ~f:(fun (binary, cmd) ->
+           let open Promise.Syntax in
+           let* cmd = cmd in
+           missing_command_opt binary cmd)
     |> Promise.all_list
     |> Promise.map List.filter_opt
 end
@@ -49,7 +61,7 @@ let sandbox_opt =
   let+ switch = Opam.Switch.of_string sandbox_name |> Promise.return in
   (opam, switch)
 
-let is_sandbox_installed (opam, switch) =
+let is_sandbox_installed { opam = opam, switch; _ } =
   let open Promise.Syntax in
   let cmd = Opam.exec opam ~switch ~args:[ "true" ] in
   let+ result = Cmd.output cmd in
@@ -72,7 +84,7 @@ let setup_toolchain_sandbox () =
     | Ok _ -> Ok ()
     | Error err -> Error (`Switch_create_failed err) )
 
-let get_install_command (opam, switch) tools =
+let get_install_command { opam = opam, switch; _ } tools =
   Opam.install opam ~switch ~args:("-y" :: tools)
 
 let _install_tools_with_cancel ~progress:_ ~token sandbox tools =
@@ -139,7 +151,7 @@ let install_missing_tools t tools =
       show_message `Error "Some tools are missing, won't install";
       Promise.return None )
 
-let setup () =
+let setup ?project_sandbox () =
   let open Promise.Syntax in
   let* sandbox_opt = sandbox_opt in
   match sandbox_opt with
@@ -148,7 +160,8 @@ let setup () =
       "Opam is required to install the toolchain. Install it manually to use \
        the extension.";
     Promise.return None
-  | Some t ->
+  | Some opam ->
+    let t = { opam; project_sandbox } in
     let* is_installed = is_sandbox_installed t in
     let* missing_tools =
       match is_installed with

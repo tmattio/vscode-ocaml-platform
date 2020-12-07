@@ -33,7 +33,8 @@ let client_options () =
     ~documentSelector ()
 
 let server_options toolchain =
-  let command = Toolchain.get_lsp_command toolchain in
+  let open Promise.Syntax in
+  let+ command = Toolchain.get_lsp_command toolchain in
   Cmd.log command;
   match command with
   | Shell command ->
@@ -57,7 +58,7 @@ let start_language_server t =
       match t.toolchain with
       | None ->
         Promise.return (Error "No toolchain available to start the server.")
-      | Some toolchain -> Promise.return (Ok (server_options toolchain))
+      | Some toolchain -> server_options toolchain |> Promise.map Result.return
     in
     let clientOptions = client_options () in
     let client =

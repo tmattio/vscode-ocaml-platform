@@ -40,7 +40,8 @@ let folder_relative_path folders file =
     ~init:None folders
 
 let get_shell_execution toolchain options =
-  let command = Toolchain.get_dune_command toolchain [ "build" ] in
+  let open Promise.Syntax in
+  let+ command = Toolchain.get_dune_command toolchain [ "build" ] in
   Cmd.log command;
   match command with
   | Shell commandLine -> ShellExecution.makeCommandLine ~commandLine ~options ()
@@ -57,7 +58,7 @@ let compute_tasks token toolchain =
     `String "{**/_*}"
   in
   let includes = `String "**/{dune,dune-project,dune-workspace}" in
-  let+ dunes = Workspace.findFiles ~includes ~excludes ~token () in
+  let* dunes = Workspace.findFiles ~includes ~excludes ~token () in
   let tasks =
     List.map dunes ~f:(fun dune ->
         let scope, relative_path =
@@ -67,7 +68,7 @@ let compute_tasks token toolchain =
             (TaskScope.Folder folder, relative_path)
         in
         let name = Printf.sprintf "build %s" relative_path in
-        let execution =
+        let+ execution =
           let cwd = Filename.dirname (Uri.fsPath dune) in
           let options = ShellExecutionOptions.create ~env ~cwd () in
           get_shell_execution toolchain options
@@ -79,6 +80,7 @@ let compute_tasks token toolchain =
         Task.set_group task TaskGroup.build;
         task)
   in
+  let+ tasks = Promise.all_list tasks in
   Some tasks
 
 let provide_tasks instance ~token =
