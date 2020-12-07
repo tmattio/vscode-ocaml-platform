@@ -430,3 +430,7 @@ let get_exec_command sandbox tools =
   | Opam (opam, switch) -> Some (Opam.exec opam ~switch ~args:tools)
   | Esy (esy, manifest) -> Some (Esy.exec esy ~manifest ~args:tools)
   | _ -> None
+
+let ocaml_version sandbox =
+  let cmd = get_command sandbox "ocamlc" [ "--version" ] in
+  Cmd.output cmd

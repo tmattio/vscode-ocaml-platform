@@ -46,6 +46,10 @@ val select_sandbox_and_save : unit -> t option Promise.t
     the sandbox configuration *)
 val select_sandbox : unit -> t option Promise.t
 
+(** [ocaml_version] returns the version of the ocaml compiler installed in given
+    sandbox. *)
+val ocaml_version : t -> (string, string) result Promise.t
+
 (* Helper utils *)
 
 val has_command : t -> string -> bool Promise.t

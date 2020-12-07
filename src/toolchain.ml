@@ -53,11 +53,23 @@ module Tool = struct
     |> Promise.map List.filter_opt
 end
 
-let sandbox_name = "vscode-ocaml-toolchain"
+let sandbox_name project_sandbox =
+  let default_name = "vscode-ocaml-toolchain.4.11.1" in
+  match project_sandbox with
+  | None -> Promise.return default_name
+  | Some sandbox -> (
+    let open Promise.Syntax in
+    let+ result = Sandbox.ocaml_version sandbox in
+    match result with
+    | Error _ -> default_name
+    | Ok version -> "vscode-ocaml-toolchain." ^ version )
 
-let sandbox_opt =
+let sandbox_opt project_sandbox =
   let open Promise.Option.Syntax in
   let* opam = Opam.make () in
+  let* sandbox_name =
+    sandbox_name project_sandbox |> Promise.map Option.return
+  in
   let+ switch = Opam.Switch.of_string sandbox_name |> Promise.return in
   (opam, switch)
 
@@ -69,12 +81,13 @@ let is_sandbox_installed { opam = opam, switch; _ } =
   | Ok _ -> true
   | Error _ -> false
 
-let setup_toolchain_sandbox () =
+let setup_toolchain_sandbox project_sandbox =
   let open Promise.Syntax in
   let* opam_opt = Opam.make () in
   match opam_opt with
   | None -> Promise.return (Error `Opam_not_available)
   | Some opam -> (
+    let* sandbox_name = sandbox_name project_sandbox in
     let+ result =
       Opam.switch_create opam ~name:sandbox_name
         ~args:[ "ocaml-base-compiler.4.11.1" ]
@@ -109,7 +122,7 @@ let install_tools ~progress:_ ~token:_ t tools =
   let* is_installed = is_sandbox_installed t in
   let* _ =
     match is_installed with
-    | false -> setup_toolchain_sandbox ()
+    | false -> setup_toolchain_sandbox t.project_sandbox
     | true -> Promise.return (Ok ())
   in
   let cmd = get_install_command t tools in
@@ -153,7 +166,7 @@ let install_missing_tools t tools =
 
 let setup ?project_sandbox () =
   let open Promise.Syntax in
-  let* sandbox_opt = sandbox_opt in
+  let* sandbox_opt = sandbox_opt project_sandbox in
   match sandbox_opt with
   | None ->
     show_message `Error
