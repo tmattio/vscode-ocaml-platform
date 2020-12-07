@@ -61,24 +61,14 @@ let check t =
     let+ s = check_spawn spawn in
     Spawn s
 
-let run ?cwd ?env =
+let run ?cwd ?env ?stdin =
   let cwd = Option.map cwd ~f:Path.to_string in
   function
   | Spawn { bin; args } ->
-    ChildProcess.spawn (Path.to_string bin) (Array.of_list args)
+    ChildProcess.spawn (Path.to_string bin) (Array.of_list args) ?stdin
       (ChildProcess.Options.create ?cwd ())
   | Shell command_line ->
-    ChildProcess.exec command_line (ChildProcess.Options.create ?cwd ?env ())
-      (fun _ -> ())
-
-let run_return ?cwd ?env ?stdin =
-  let cwd = Option.map cwd ~f:Path.to_string in
-  function
-  | Spawn { bin; args } ->
-    ChildProcess.spawn_return (Path.to_string bin) (Array.of_list args) ?stdin
-      (ChildProcess.Options.create ?cwd ())
-  | Shell command_line ->
-    ChildProcess.exec_return command_line ?stdin
+    ChildProcess.exec command_line ?stdin
       (ChildProcess.Options.create ?cwd ?env ())
 
 let log ?(result : ChildProcess.return option) (t : t) =
@@ -107,7 +97,7 @@ let log ?(result : ChildProcess.return option) (t : t) =
 
 let output ?cwd ?env ?stdin (t : t) =
   let open Promise.Syntax in
-  let+ (result : ChildProcess.return) = run_return ?stdin ?cwd ?env t in
+  let+ (result : ChildProcess.return) = run ?stdin ?cwd ?env t in
   log ~result t;
   if result.exitCode = 0 then
     Ok result.stdout

@@ -34,9 +34,7 @@ val output :
 
 val equal_spawn : spawn -> spawn -> bool
 
-val run : ?cwd:Path.t -> ?env:string Interop.Dict.t -> t -> ChildProcess.t
-
-val run_return :
+val run :
      ?cwd:Path.t
   -> ?env:string Interop.Dict.t
   -> ?stdin:stderr

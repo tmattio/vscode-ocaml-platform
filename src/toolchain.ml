@@ -100,23 +100,6 @@ let setup_toolchain_sandbox project_sandbox =
 let get_install_command { opam = opam, switch; _ } tools =
   Opam.install opam ~switch ~args:("-y" :: tools)
 
-let _install_tools_with_cancel ~progress:_ ~token sandbox tools =
-  Promise.make @@ fun ~resolve ~reject ->
-  let cmd = get_install_command sandbox tools in
-  let child_process = Cmd.run cmd in
-  let _ =
-    (CancellationToken.onCancellationRequested token) ~listener:(fun _ ->
-        let _ = ChildProcess.kill child_process "SIGTERM" in
-        ())
-  in
-  ChildProcess.on child_process "close" (fun _ ->
-      show_message `Info "The platform tools have been successfully installed";
-      resolve ());
-  ChildProcess.on child_process "error" (fun err ->
-      show_message `Error "The installation of the Platform tools failed";
-      reject err);
-  ()
-
 let install_tools ~progress:_ ~token:_ t tools =
   let open Promise.Syntax in
   let* is_installed = is_sandbox_installed t in

@@ -86,15 +86,9 @@ module ChildProcess = struct
 
   val get_stdin : t -> Stream.t [@@js.get "stdin"]
 
-  val killed : t -> bool [@@js.get "killed"]
-
   val on : t -> string -> (int -> unit) -> unit [@@js.call]
 
-  let on_close t f = on t "close" f
-
-  let on_error t f = on t "error" f
-
-  val kill : t -> string -> bool [@@js.call]
+  let on_close t close = on t "close" close
 
   module Options = struct
     type t = private Ojs.t [@@js]
@@ -106,12 +100,6 @@ module ChildProcess = struct
 
   val code : exec_result -> int [@@js.get]
 
-  type return =
-    { exitCode : int
-    ; stdout : string
-    ; stderr : string (* ; kill : unit -> unit Promise.t *)
-    }
-
   val exec :
        string
     -> Options.t
@@ -119,18 +107,23 @@ module ChildProcess = struct
     -> t
     [@@js.global "child_process.exec"]
 
-  let exec cmd options f =
-    exec cmd options (fun err stdout stderr ->
-        let exitCode =
-          match err with
-          | None -> 0
-          | Some err -> code err
-        in
-        f { exitCode; stdout; stderr })
+  type return =
+    { exitCode : int
+    ; stdout : string
+    ; stderr : string
+    }
 
-  let exec_return cmd ?stdin options =
+  let exec cmd ?stdin options =
     Promise.make @@ fun ~resolve ~reject:_ ->
-    let cp = exec cmd options (fun return -> resolve return) in
+    let cp =
+      exec cmd options (fun err stdout stderr ->
+          let exitCode =
+            match err with
+            | None -> 0
+            | Some err -> code err
+          in
+          resolve { exitCode; stdout; stderr })
+    in
     match stdin with
     | Some text ->
       Stream.write (get_stdin cp) text;
@@ -140,7 +133,7 @@ module ChildProcess = struct
   val spawn : string -> string array -> Options.t -> t
     [@@js.global "child_process.spawn"]
 
-  let spawn_return cmd args ?stdin options =
+  let spawn cmd args ?stdin options =
     Promise.make @@ fun ~resolve ~reject:_ ->
     let cp = spawn cmd args options in
 
