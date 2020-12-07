@@ -21,10 +21,6 @@
   The platform tools (a.k.a toolchain) are installed in a private opam switch
   that should only be used by `vscode-ocaml-platform`.
 
-  The detection will prioritize Opam local switches, then Esy sandboxes (that
-  are detected with the directory `_esy`), and will fallback to the global
-  environment sandbox if none of these are found.
-
 ## 1.5.0
 
 - Highlight `rec` keyword in OCaml mli files for recursive modules (#434)
