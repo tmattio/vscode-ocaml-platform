@@ -20,6 +20,7 @@
   "categories": [
     "Programming Languages"
   ],
+  "enableProposedApi": true,
   "activationEvents": [
     "onLanguage:ocaml",
     "onLanguage:ocaml.interface",
@@ -31,10 +32,50 @@
     "onLanguage:dune-workspace",
     "onCommand:ocaml.select-sandbox",
     "onCommand:ocaml.open-terminal",
-    "onCommand:ocaml.open-terminal-select"
+    "onCommand:ocaml.open-terminal-select",
+    "workspaceContains:dune-project",
+    "workspaceContains:**/dune-project",
+    "workspaceContains:*.opam",
+    "workspaceContains:**/*.opam",
+    "workspaceContains:*.ml",
+    "workspaceContains:**/*.ml",
+    "workspaceContains:*.mli",
+    "workspaceContains:**/*.mli"
   ],
   "icon": "assets/logo.png",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ocaml-explorer",
+          "title": "OCaml",
+          "icon": "assets/logo.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "opam-packages",
+        "contents": "No OCaml project found.\n[New OCaml project](command:metals.new-ocaml-project)",
+        "when": "workbenchState != empty"
+      }
+    ],
+    "views": {
+      "ocaml-explorer": [
+        {
+          "id": "opam-packages",
+          "name": "Packages"
+        },
+        {
+          "id": "ocaml-build",
+          "name": "Build commands"
+        },
+        {
+          "id": "ocaml-help",
+          "name": "Help and feedback"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "ocaml.select-sandbox",
@@ -90,6 +131,28 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "ocaml.select-sandbox",
+          "when": "ocaml-platform:enabled"
+        },
+        {
+          "command": "ocaml.server.restart",
+          "when": "ocaml-platform:enabled"
+        },
+        {
+          "command": "ocaml.open-terminal",
+          "when": "ocaml-platform:enabled"
+        },
+        {
+          "command": "ocaml.open-terminal-select",
+          "when": "ocaml-platform:enabled"
+        },
+        {
+          "command": "ocaml.switch-impl-intf",
+          "when": "ocaml-platform:enabled"
+        }
+      ],
       "editor/title": [
         {
           "command": "ocaml.switch-impl-intf",

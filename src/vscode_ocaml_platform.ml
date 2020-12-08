@@ -19,6 +19,10 @@ let activate (extension : ExtensionContext.t) =
      vscode [output] pane for logs *)
   Process.Env.set "OCAML_LSP_SERVER_LOG" "-";
   let open Promise.Syntax in
+  let (_ : Disposable.t) =
+    Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-help"
+      ~treeDataProvider:(Tree_data_help.provider extension)
+  in
   let instance = Extension_instance.make () in
   ExtensionContext.subscribe extension
     ~disposable:(Extension_instance.disposable instance);
