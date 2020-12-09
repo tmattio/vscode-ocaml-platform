@@ -337,9 +337,13 @@ let sandbox_candidates ~workspace_folders =
     | None -> Promise.return []
     | Some opam ->
       let+ switches = Opam.switch_list opam in
-      List.map switches ~f:(fun sw ->
+      List.filter_map switches ~f:(function
+        | Named name when String.is_prefix name ~prefix:"vscode-ocaml-toolchain"
+          ->
+          None
+        | sw ->
           let sandbox = Opam (opam, sw) in
-          { Candidate.sandbox; status = Ok () })
+          Some { Candidate.sandbox; status = Ok () })
   in
   let global = Candidate.ok Global in
   let custom =
