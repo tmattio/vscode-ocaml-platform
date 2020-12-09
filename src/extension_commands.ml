@@ -24,7 +24,9 @@ let select_sandbox =
       match sandbox with
       | None (* sandbox selection cancelled *) -> Promise.return ()
       | Some new_sandbox ->
+        let* toolchain = Toolchain.setup ~project_sandbox:new_sandbox () in
         Extension_instance.set_sandbox instance new_sandbox;
+        Option.iter toolchain ~f:(Extension_instance.set_toolchain instance);
         let (_ : unit Promise.t) = Sandbox.save_to_settings new_sandbox in
         Extension_instance.start_language_server instance
     in
