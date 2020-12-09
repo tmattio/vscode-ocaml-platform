@@ -54,7 +54,9 @@ module Tool = struct
 end
 
 let sandbox_name project_sandbox =
-  let default_name = "vscode-ocaml-toolchain.4.11.1" in
+  let default_name =
+    ("ocaml-base-compiler.4.11.1", "vscode-ocaml-toolchain.4.11.1")
+  in
   match project_sandbox with
   | None -> Promise.return default_name
   | Some sandbox -> (
@@ -62,16 +64,8 @@ let sandbox_name project_sandbox =
     let+ result = Sandbox.ocaml_version sandbox in
     match result with
     | Error _ -> default_name
-    | Ok version -> "vscode-ocaml-toolchain." ^ version )
-
-let sandbox_opt project_sandbox =
-  let open Promise.Option.Syntax in
-  let* opam = Opam.make () in
-  let* sandbox_name =
-    sandbox_name project_sandbox |> Promise.map Option.return
-  in
-  let+ switch = Opam.Switch.of_string sandbox_name |> Promise.return in
-  (opam, switch)
+    | Ok version ->
+      ("ocaml-base-compiler." ^ version, "vscode-ocaml-toolchain." ^ version) )
 
 let is_sandbox_installed { opam = opam, switch; _ } =
   let open Promise.Syntax in
@@ -85,72 +79,58 @@ let setup_toolchain_sandbox project_sandbox =
   let open Promise.Syntax in
   let* opam_opt = Opam.make () in
   match opam_opt with
-  | None -> Promise.return (Error `Opam_not_available)
-  | Some opam -> (
-    let* sandbox_name = sandbox_name project_sandbox in
-    let+ result =
-      Opam.switch_create opam ~name:sandbox_name
-        ~args:[ "ocaml-base-compiler.4.11.1" ]
+  | None -> Promise.return (Error "Opam is not available")
+  | Some opam ->
+    let* compiler_version, sandbox_name = sandbox_name project_sandbox in
+    let open Promise.Result.Syntax in
+    let+ _ =
+      Opam.switch_create opam ~name:sandbox_name ~args:[ compiler_version ]
       |> Cmd.output
     in
-    match result with
-    | Ok _ -> Ok ()
-    | Error err -> Error (`Switch_create_failed err) )
+    ()
 
 let get_install_command { opam = opam, switch; _ } tools =
   Opam.install opam ~switch ~args:("-y" :: tools)
 
-let install_tools ~progress:_ ~token:_ t tools =
-  let open Promise.Syntax in
-  let* is_installed = is_sandbox_installed t in
-  let* _ =
-    match is_installed with
-    | false -> setup_toolchain_sandbox t.project_sandbox
-    | true -> Promise.return (Ok ())
-  in
-  let cmd = get_install_command t tools in
-  let+ result = Cmd.output cmd in
-  match result with
-  | Ok _ ->
-    show_message `Info "The platform tools have been successfully installed";
-    Some t
-  | Error err ->
-    show_message `Error "The installation of the Platform tools failed: %s" err;
-    None
-
 let install_missing_tools t tools =
-  let open Promise.Syntax in
   match tools with
   | [] -> Promise.return (Some t)
-  | tools -> (
-    let select_pm_button_text = "Install toolchain" in
-    let missing_str = String.concat ~sep:", " tools in
-    let* selection =
-      Window.showInformationMessage
-        ~message:
-          (Printf.sprintf
-             "OCaml Platform toolchain is not installed. Do you want to \
-              install it?\n\
-              Missing: %s" missing_str)
-        ~choices:[ (select_pm_button_text, ()) ]
-        ()
-    in
+  | tools ->
     let progress_options =
       ProgressOptions.create ~location:(`ProgressLocation Window)
         ~title:"Installing Platform Tools" ~cancellable:false ()
     in
-    let task = install_tools t tools in
-    match selection with
-    | Some () -> Window.withProgress ~options:progress_options ~task
-    | None ->
-      (* We should remove that *)
-      show_message `Error "Some tools are missing, won't install";
-      Promise.return None )
+    let task ~progress:_ ~token:_ =
+      let open Promise.Syntax in
+      let* is_installed = is_sandbox_installed t in
+      let* _ =
+        match is_installed with
+        | false -> setup_toolchain_sandbox t.project_sandbox
+        | true -> Promise.return (Ok ())
+      in
+      let cmd = get_install_command t tools in
+      let+ result = Cmd.output cmd in
+      match result with
+      | Ok _ ->
+        show_message `Info "The platform tools have been successfully installed";
+        Some t
+      | Error err ->
+        show_message `Error "The installation of the Platform tools failed: %s"
+          err;
+        None
+    in
+    Window.withProgress ~options:progress_options ~task
 
 let setup ?project_sandbox () =
   let open Promise.Syntax in
-  let* sandbox_opt = sandbox_opt project_sandbox in
-  match sandbox_opt with
+  let* _, sandbox_name = sandbox_name project_sandbox in
+  let* opam_opt =
+    let open Promise.Option.Syntax in
+    let* opam = Opam.make () in
+    let+ switch = Opam.Switch.of_string sandbox_name |> Promise.return in
+    (opam, switch)
+  in
+  match opam_opt with
   | None ->
     show_message `Error
       "Opam is required to install the toolchain. Install it manually to use \

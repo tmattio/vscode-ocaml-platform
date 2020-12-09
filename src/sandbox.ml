@@ -433,4 +433,6 @@ let get_exec_command sandbox tools =
 
 let ocaml_version sandbox =
   let cmd = get_command sandbox "ocamlc" [ "--version" ] in
-  Cmd.output cmd
+  let open Promise.Result.Syntax in
+  let+ output = Cmd.output cmd in
+  String.strip output
