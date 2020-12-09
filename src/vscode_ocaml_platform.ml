@@ -31,7 +31,7 @@ let activate (extension : ExtensionContext.t) =
     Toolchain.setup ?project_sandbox:sandbox ()
   in
   let (_ : unit Promise.t) = Treeview_packages.register extension in
-  let (_ : unit Promise.t) = Treeview_commands.register () in
+  let (_ : unit Promise.t) = Treeview_commands.register extension in
   let (_ : unit Promise.t) = Treeview_help.register extension in
   let (_ : unit Promise.t) =
     let* sandbox = sandbox in

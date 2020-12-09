@@ -20,7 +20,7 @@ let tutorial_item ~extension_path =
   in
   Vscode.TreeItem.set_iconPath item icon;
   Vscode.TreeItem.set_command item command;
-  item |> Vscode.TreeItem.t_to_js
+  item
 
 let discord_item ~extension_path =
   let icon =
@@ -41,7 +41,7 @@ let discord_item ~extension_path =
   in
   Vscode.TreeItem.set_iconPath item icon;
   Vscode.TreeItem.set_command item command;
-  item |> Vscode.TreeItem.t_to_js
+  item
 
 let discuss_item ~extension_path =
   let icon =
@@ -64,7 +64,7 @@ let discuss_item ~extension_path =
   in
   Vscode.TreeItem.set_iconPath item icon;
   Vscode.TreeItem.set_command item command;
-  item |> Vscode.TreeItem.t_to_js
+  item
 
 let github_item ~extension_path =
   let icon =
@@ -87,7 +87,7 @@ let github_item ~extension_path =
   in
   Vscode.TreeItem.set_iconPath item icon;
   Vscode.TreeItem.set_command item command;
-  item |> Vscode.TreeItem.t_to_js
+  item
 
 let items ~extension_path =
   [ tutorial_item ~extension_path
