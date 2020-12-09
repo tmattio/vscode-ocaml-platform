@@ -55,7 +55,7 @@
     },
     "viewsWelcome": [
       {
-        "view": "opam-packages",
+        "view": "ocaml-packages",
         "contents": "No OCaml project found.\n[New OCaml project](command:metals.new-ocaml-project)",
         "when": "workbenchState != empty"
       }

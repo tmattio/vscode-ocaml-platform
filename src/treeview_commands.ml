@@ -7,4 +7,12 @@ let getChildren ~element =
   | None -> `Promise (Promise.return (Some items))
   | Some _ -> `Promise (Promise.return (Some []))
 
-let provider = Vscode.TreeDataProvider.create ~getTreeItem ~getChildren ()
+let register () =
+  let treeDataProvider =
+    Vscode.TreeDataProvider.create ~getTreeItem ~getChildren ()
+  in
+  let _ =
+    Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-commands"
+      ~treeDataProvider
+  in
+  Promise.return ()

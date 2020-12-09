@@ -30,22 +30,9 @@ let activate (extension : ExtensionContext.t) =
     let* sandbox = sandbox in
     Toolchain.setup ?project_sandbox:sandbox ()
   in
-  let (_ : Disposable.t Promise.t) =
-    let+ sandbox = sandbox in
-    match sandbox with
-    | None -> Vscode.Disposable.make ~dispose:(fun () -> ())
-    | Some sandbox ->
-      Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-packages"
-        ~treeDataProvider:(Treeview_packages.provider sandbox)
-  in
-  let (_ : Disposable.t) =
-    Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-commands"
-      ~treeDataProvider:Treeview_commands.provider
-  in
-  let (_ : Disposable.t) =
-    Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-help"
-      ~treeDataProvider:(Treeview_help.provider extension)
-  in
+  let (_ : unit Promise.t) = Treeview_packages.register extension in
+  let (_ : unit Promise.t) = Treeview_commands.register () in
+  let (_ : unit Promise.t) = Treeview_help.register extension in
   let (_ : unit Promise.t) =
     let* sandbox = sandbox in
     let is_fallback = Option.is_empty sandbox in

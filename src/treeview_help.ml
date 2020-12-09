@@ -20,7 +20,7 @@ let tutorial_item ~extension_path =
   in
   Vscode.TreeItem.set_iconPath item icon;
   Vscode.TreeItem.set_command item command;
-  item
+  item |> Vscode.TreeItem.t_to_js
 
 let discord_item ~extension_path =
   let icon =
@@ -41,7 +41,7 @@ let discord_item ~extension_path =
   in
   Vscode.TreeItem.set_iconPath item icon;
   Vscode.TreeItem.set_command item command;
-  item
+  item |> Vscode.TreeItem.t_to_js
 
 let discuss_item ~extension_path =
   let icon =
@@ -64,7 +64,7 @@ let discuss_item ~extension_path =
   in
   Vscode.TreeItem.set_iconPath item icon;
   Vscode.TreeItem.set_command item command;
-  item
+  item |> Vscode.TreeItem.t_to_js
 
 let github_item ~extension_path =
   let icon =
@@ -87,7 +87,7 @@ let github_item ~extension_path =
   in
   Vscode.TreeItem.set_iconPath item icon;
   Vscode.TreeItem.set_command item command;
-  item
+  item |> Vscode.TreeItem.t_to_js
 
 let items ~extension_path =
   [ tutorial_item ~extension_path
@@ -103,9 +103,16 @@ let getChildren ~extension_path ~element =
   | None -> `Promise (Promise.return (Some (items ~extension_path)))
   | Some _ -> `Promise (Promise.return (Some []))
 
-let provider extension =
+let register extension =
   let extension_path = Vscode.ExtensionContext.extensionPath extension in
-  Vscode.TreeDataProvider.create
-    ~getTreeItem:(getTreeItem ~extension_path)
-    ~getChildren:(getChildren ~extension_path)
-    ()
+  let treeDataProvider =
+    Vscode.TreeDataProvider.create
+      ~getTreeItem:(getTreeItem ~extension_path)
+      ~getChildren:(getChildren ~extension_path)
+      ()
+  in
+  let _ =
+    Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-help"
+      ~treeDataProvider
+  in
+  Promise.return ()

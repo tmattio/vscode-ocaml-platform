@@ -21,6 +21,11 @@
   The platform tools (a.k.a toolchain) are installed in a private opam switch
   that should only be used by `vscode-ocaml-platform`.
 
+- Add an OCaml activity tab.
+
+  The activity tab provides three views: the available switches, the build
+  commands and an Help and Feedback section with links to community channels.
+
 ## 1.5.0
 
 - Highlight `rec` keyword in OCaml mli files for recursive modules (#434)
