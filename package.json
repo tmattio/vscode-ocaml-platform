@@ -63,12 +63,12 @@
     "views": {
       "ocaml-explorer": [
         {
-          "id": "opam-packages",
+          "id": "ocaml-packages",
           "name": "Packages"
         },
         {
-          "id": "ocaml-build",
-          "name": "Build commands"
+          "id": "ocaml-commands",
+          "name": "Commands"
         },
         {
           "id": "ocaml-help",

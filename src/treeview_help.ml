@@ -1,3 +1,27 @@
+let tutorial_item ~extension_path =
+  let icon =
+    `LightDark
+      Vscode.TreeItem.
+        { light = `String (extension_path ^ "/assets/book-light.svg")
+        ; dark = `String (extension_path ^ "/assets/book-dark.svg")
+        }
+  in
+  let label =
+    Vscode.TreeItemLabel.create ~label:"Get Started with OCaml Tutorials" ()
+  in
+  let item = Vscode.TreeItem.make ~label () in
+  let command =
+    Vscode.Command.create ~title:"Open" ~command:"vscode.open"
+      ~arguments:
+        [ Vscode.Uri.parse "https://ocaml.org/learn/tutorials/" ()
+          |> Vscode.Uri.t_to_js
+        ]
+      ()
+  in
+  Vscode.TreeItem.set_iconPath item icon;
+  Vscode.TreeItem.set_command item command;
+  item
+
 let discord_item ~extension_path =
   let icon =
     `LightDark
@@ -11,9 +35,30 @@ let discord_item ~extension_path =
   let command =
     Vscode.Command.create ~title:"Open" ~command:"vscode.open"
       ~arguments:
-        [ Vscode.Uri.parse "https://github.com/ocamllabs/vscode-ocaml-platform"
-            ()
-          |> Vscode.Uri.t_to_js
+        [ Vscode.Uri.parse "https://discord.gg/cCYQbqN" () |> Vscode.Uri.t_to_js
+        ]
+      ()
+  in
+  Vscode.TreeItem.set_iconPath item icon;
+  Vscode.TreeItem.set_command item command;
+  item
+
+let discuss_item ~extension_path =
+  let icon =
+    `LightDark
+      Vscode.TreeItem.
+        { light = `String (extension_path ^ "/assets/comment-light.svg")
+        ; dark = `String (extension_path ^ "/assets/comment-dark.svg")
+        }
+  in
+  let label =
+    Vscode.TreeItemLabel.create ~label:"Ask a question on Discuss" ()
+  in
+  let item = Vscode.TreeItem.make ~label () in
+  let command =
+    Vscode.Command.create ~title:"Open" ~command:"vscode.open"
+      ~arguments:
+        [ Vscode.Uri.parse "https://discuss.ocaml.org/" () |> Vscode.Uri.t_to_js
         ]
       ()
   in
@@ -29,7 +74,7 @@ let github_item ~extension_path =
         ; dark = `String (extension_path ^ "/assets/github-dark.svg")
         }
   in
-  let label = Vscode.TreeItemLabel.create ~label:"OCaml on Github" () in
+  let label = Vscode.TreeItemLabel.create ~label:"Open an issue on Github" () in
   let item = Vscode.TreeItem.make ~label () in
   let command =
     Vscode.Command.create ~title:"Open" ~command:"vscode.open"
@@ -45,7 +90,11 @@ let github_item ~extension_path =
   item
 
 let items ~extension_path =
-  [ discord_item ~extension_path; github_item ~extension_path ]
+  [ tutorial_item ~extension_path
+  ; discord_item ~extension_path
+  ; discuss_item ~extension_path
+  ; github_item ~extension_path
+  ]
 
 let getTreeItem ~extension_path:_ ~element = Promise.return element
 

@@ -19,10 +19,6 @@ let activate (extension : ExtensionContext.t) =
      vscode [output] pane for logs *)
   Process.Env.set "OCAML_LSP_SERVER_LOG" "-";
   let open Promise.Syntax in
-  let (_ : Disposable.t) =
-    Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-help"
-      ~treeDataProvider:(Tree_data_help.provider extension)
-  in
   let instance = Extension_instance.make () in
   ExtensionContext.subscribe extension
     ~disposable:(Extension_instance.disposable instance);
@@ -33,6 +29,22 @@ let activate (extension : ExtensionContext.t) =
   let toolchain =
     let* sandbox = sandbox in
     Toolchain.setup ?project_sandbox:sandbox ()
+  in
+  let (_ : Disposable.t Promise.t) =
+    let+ sandbox = sandbox in
+    match sandbox with
+    | None -> Vscode.Disposable.make ~dispose:(fun () -> ())
+    | Some sandbox ->
+      Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-packages"
+        ~treeDataProvider:(Treeview_packages.provider sandbox)
+  in
+  let (_ : Disposable.t) =
+    Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-commands"
+      ~treeDataProvider:Treeview_commands.provider
+  in
+  let (_ : Disposable.t) =
+    Vscode.Window.registerTreeDataProvider ~viewId:"ocaml-help"
+      ~treeDataProvider:(Treeview_help.provider extension)
   in
   let (_ : unit Promise.t) =
     let* sandbox = sandbox in
