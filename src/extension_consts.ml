@@ -15,7 +15,11 @@ module Commands = struct
 
   let refresh_switches = ocaml_prefixed "refresh-switches"
 
-  let open_documentation = ocaml_prefixed "open-documentation"
+  let refresh_sandbox = ocaml_prefixed "refresh-sandbox"
+
+  let open_switches_documentation = ocaml_prefixed "open-switches-documentation"
+
+  let open_sandbox_documentation = ocaml_prefixed "open-sandbox-documentation"
 end
 
 (* TODO: Refactor the code so that we don't need any "constants" module *)

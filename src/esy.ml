@@ -16,6 +16,12 @@ let make () =
   | Error _ -> None
   | Ok cmd -> Some cmd
 
+module Package = struct
+  type t = { name : string }
+
+  let name t = t.name
+end
+
 module Discover = struct
   let valid file = Some { file; status = Ok () }
 

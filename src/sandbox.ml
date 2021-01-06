@@ -1,14 +1,30 @@
 open Import
 
-(* Terminology: - Sandbox: represents supported sandboxes with Global as the
-   fallback - project_root is different from Package_manager root (Eg. Opam
-   (Path.of_string "/foo/bar")). Project root is the directory where manifest
-   file (opam/esy.json/package.json) was found. Package_manager root is the
-   directory that contains the manifest file responsible for setting up the
-   sandbox - the two are same for Esy and Opam project but different for
-   bucklescript. Bucklescript projects have this manifest file abstracted away
-   from the user (at least at the moment) - Manifest: abstracts functions
-   handling manifest files of the supported package managers *)
+module Package = struct
+  type t = Opam of Opam.Package.t
+
+  let of_opam opam_pkg = Opam opam_pkg
+
+  let name t =
+    match t with
+    | Opam pkg -> Opam.Package.name pkg
+
+  let version t =
+    match t with
+    | Opam pkg -> Opam.Package.version pkg
+
+  let synopsis t =
+    match t with
+    | Opam pkg -> Opam.Package.synopsis pkg
+
+  let documentation t =
+    match t with
+    | Opam pkg -> Opam.Package.documentation pkg
+
+  let depends t =
+    match t with
+    | Opam pkg -> Opam.Package.depends pkg
+end
 
 type t =
   | Opam of Opam.t * Opam.Switch.t
@@ -169,7 +185,7 @@ let of_settings () : t option Promise.t =
       not_available `Opam;
       Promise.return None
     | Some opam ->
-      let+ exists = Opam.exists opam ~switch in
+      let+ exists = Opam.switch_exists opam switch in
       if exists then
         Some (Opam (opam, switch))
       else (
@@ -394,7 +410,7 @@ let select_sandbox_and_save () =
 
 let get_command sandbox bin args : Cmd.t =
   match sandbox with
-  | Opam (opam, switch) -> Opam.exec opam ~switch ~args:(bin :: args)
+  | Opam (opam, switch) -> Opam.exec opam switch (bin :: args)
   | Esy (esy, manifest) -> Esy.exec esy ~manifest ~args:(bin :: args)
   | Global -> Spawn { bin = Path.of_string bin; args }
   | Custom template ->
@@ -434,3 +450,30 @@ let run_setup sandbox =
        consider checking and suggesting installation for other tools: formatter,
        etc. *)
     Error (Printf.sprintf "Sandbox initialisation failed: %s" msg)
+
+let packages t =
+  let open Promise.Result.Syntax in
+  match t with
+  | Global -> Promise.Result.return []
+  | Custom _ -> Promise.Result.return []
+  | Esy (_esy, _path) -> Promise.Result.return []
+  | Opam (opam, switch) ->
+    let+ r = Opam.packages opam switch in
+    List.map r ~f:Package.of_opam
+
+let root_packages t =
+  let open Promise.Result.Syntax in
+  match t with
+  | Global -> Promise.Result.return []
+  | Custom _ -> Promise.Result.return []
+  | Esy (_esy, _path) -> Promise.Result.return []
+  | Opam (opam, switch) ->
+    let+ r = Opam.root_packages opam switch in
+    List.map r ~f:Package.of_opam
+
+let package_dependencies (pkg : Package.t) =
+  match pkg with
+  | Opam opam_pkg ->
+    let open Promise.Result.Syntax in
+    let+ opam_pkgs = Opam.package_dependencies opam_pkg in
+    List.map ~f:Package.of_opam opam_pkgs

@@ -1,5 +1,11 @@
 open Import
 
+module Package : sig
+  type t
+
+  val name : t -> string
+end
+
 type t
 
 val make : unit -> t option Promise.t

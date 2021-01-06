@@ -2038,13 +2038,6 @@ module TreeItem = struct
     -> t
     [@@js.new "vscode.TreeItem"]
 
-  val of_uri :
-       resourceUri:Uri.t
-    -> ?collapsibleState:TreeItemCollapsibleState.t
-    -> unit
-    -> t
-    [@@js.new "vscode.TreeItem"]
-
   val label : t -> label or_undefined [@@js.get]
 
   val set_label : t -> label -> unit [@@js.set]

@@ -1,7 +1,5 @@
-(** Sandbox.ml exposes functions that let us
-
-    1. Run initial checks in the environment looking for a reliable sandbox
-    ([Sandbox.init])
+(** Sandbox.ml exposes functions that let us 1. Run initial checks in the
+    environment looking for a reliable sandbox ([Sandbox.init])
 
     2. Run a setup that would setup the sandbox provided that basic requirements
     are met ([Sandbox.run_setup])
@@ -15,6 +13,20 @@
     that we can handle missing tools gracefully (ie provide degraded
     performance, direct user to install missing tools etc). Having a single
     [Sandbox.make()], for instance, would not make it this flexible. *)
+
+module Package : sig
+  type t = Opam of Opam.Package.t
+
+  val name : t -> string
+
+  val version : t -> string
+
+  val synopsis : t -> string option
+
+  val documentation : t -> string option
+
+  val depends : t -> string list option
+end
 
 type t =
   | Opam of Opam.t * Opam.Switch.t
@@ -81,3 +93,12 @@ val get_lsp_command : ?args:string list -> t -> Cmd.t
 
 (** Extract a dune command *)
 val get_dune_command : t -> string list -> Cmd.t
+
+(** The packages installed in the sandbox *)
+val packages : t -> (Package.t list, string) result Promise.t
+
+val root_packages : t -> (Package.t list, string) result Promise.t
+
+(** List of the dependencies of the given package. *)
+val package_dependencies :
+  Package.t -> (Package.t list, string) result Promise.t
