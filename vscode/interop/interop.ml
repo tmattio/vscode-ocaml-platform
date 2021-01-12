@@ -149,7 +149,7 @@ module Interface = struct
     type t = private Ojs.t [@@js]
   end
 
-  module Extend (Super : Js.T) () = struct
+  module Extends (Super : Js.T) () = struct
     type t = private Super.t [@@js]
   end
 

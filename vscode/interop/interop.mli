@@ -64,7 +64,7 @@ end
 module Interface : sig
   module Make () : Js.T with type t = private Ojs.t
 
-  module Extend (Super : Js.T) () : Js.T with type t = private Super.t
+  module Extends (Super : Js.T) () : Js.T with type t = private Super.t
 
   module Generic (Super : Js.T) () : sig
     type 'a t = private Super.t
