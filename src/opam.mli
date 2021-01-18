@@ -26,15 +26,7 @@ end
 module Package : sig
   type t
 
-  (** {4 Constructors} *)
-  val make :
-    name:string -> version:string -> opam_path:Path.t -> t option Promise.t
-
-  val of_path : Path.t -> t option Promise.t
-
   (** {4 Properties} *)
-
-  val path : t -> Path.t
 
   val name : t -> string
 
@@ -44,12 +36,26 @@ module Package : sig
 
   val synopsis : t -> string option
 
-  val depends : t -> string list option
+  val has_dependencies : t -> bool
+
+  val dependencies : t -> (t list, string) result Promise.t
 end
 
 type t
 
 val make : unit -> t option Promise.t
+
+(** Install new packages in a switch *)
+val install : t -> Switch.t -> string list -> Cmd.t
+
+(** Update the opam repository *)
+val update : t -> Cmd.t
+
+(** Upgrade packages in a switch *)
+val upgrade : t -> Switch.t -> Cmd.t
+
+(* Remove a list of packages from a switch *)
+val remove : t -> Switch.t -> string list -> Cmd.t
 
 (** {4 Working with switches} *)
 
@@ -85,20 +91,13 @@ val packages : t -> Switch.t -> (Package.t list, string) result Promise.t
     to packages that have been installed as a dependency of another package. *)
 val root_packages : t -> Switch.t -> (Package.t list, string) result Promise.t
 
-(** Return the list of dependencies of the given package in the given switch.
-
-    Return an error if the package does not exist or its dependencies cannot be
-    read. *)
-val package_dependencies :
-  Package.t -> (Package.t list, string) result Promise.t
-
 (** Uninstall a package from a switch by calling [opam uninstall]. *)
-val package_uninstall : t -> Switch.t -> Package.t -> Cmd.t
+val package_remove : t -> Switch.t -> Package.t list -> Cmd.t
 
 (** {4 General utilities} *)
 
 (** Execute an opam sub-command with in the given switch. *)
-val exec : t -> Switch.t -> string list -> Cmd.t
+val exec : t -> Switch.t -> args:string list -> Cmd.t
 
 (** Check that two instances of [Opam] are equal. *)
 val equal : t -> t -> bool

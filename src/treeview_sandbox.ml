@@ -25,11 +25,10 @@ module Dependency = struct
       }
 
   let collapsible_state t =
-    match Sandbox.Package.depends t with
-    | Some []
-    | None ->
+    if Sandbox.Package.has_dependencies t then
+      TreeItemCollapsibleState.Collapsed
+    else
       TreeItemCollapsibleState.None
-    | _ -> TreeItemCollapsibleState.Collapsed
 
   let to_treeitem dependency =
     let open Promise.Syntax in
@@ -52,7 +51,7 @@ module Dependency = struct
 
   let get_dependencies t =
     let open Promise.Syntax in
-    let+ deps = Sandbox.package_dependencies t in
+    let+ deps = Sandbox.Package.dependencies t in
     match deps with
     | Error _ -> None
     | Ok packages -> Some packages
@@ -81,6 +80,89 @@ module Command = struct
     in
     Extension_commands.register
       Extension_consts.Commands.open_sandbox_documentation handler
+
+  let _uninstall =
+    let handler (instance : Extension_instance.t) ~args =
+      let (_ : unit Promise.t) =
+        let arg = List.hd_exn args in
+        let dep = Dependency.t_of_js arg in
+        let open Promise.Syntax in
+        let sandbox = Extension_instance.sandbox instance in
+        let+ () = Sandbox.uninstall_packages sandbox [ dep ] in
+        let (_ : Ojs.t option Promise.t) =
+          Vscode.Commands.executeCommand
+            (module Ojs)
+            ~command:Extension_consts.Commands.refresh_switches ~args:[]
+        in
+        let (_ : Ojs.t option Promise.t) =
+          Vscode.Commands.executeCommand
+            (module Ojs)
+            ~command:Extension_consts.Commands.refresh_sandbox ~args:[]
+        in
+        ()
+      in
+      ()
+    in
+    Extension_commands.register
+      Extension_consts.Commands.uninstall_sandbox_package handler
+
+  let _upgrade =
+    let handler (instance : Extension_instance.t) ~args:_ =
+      let (_ : unit Promise.t) =
+        let open Promise.Syntax in
+        let sandbox = Extension_instance.sandbox instance in
+        let+ () = Sandbox.upgrade_packages sandbox in
+        let (_ : Ojs.t option Promise.t) =
+          Vscode.Commands.executeCommand
+            (module Ojs)
+            ~command:Extension_consts.Commands.refresh_switches ~args:[]
+        in
+        let (_ : Ojs.t option Promise.t) =
+          Vscode.Commands.executeCommand
+            (module Ojs)
+            ~command:Extension_consts.Commands.refresh_sandbox ~args:[]
+        in
+        ()
+      in
+      ()
+    in
+    Extension_commands.register Extension_consts.Commands.upgrade_sandbox
+      handler
+
+  let ask_packages () =
+    let options =
+      InputBoxOptions.create ~prompt:"Install Packages"
+        ~placeHolder:"Type the packages names, separated with a space" ()
+    in
+    Window.showInputBox ~options ()
+
+  let _install =
+    let handler (instance : Extension_instance.t) ~args:_ =
+      let (_ : unit Promise.t) =
+        let open Promise.Syntax in
+        let* package_str_opt = ask_packages () in
+        match package_str_opt with
+        | None -> Promise.return ()
+        | Some package_str ->
+          let sandbox = Extension_instance.sandbox instance in
+          let packages = String.split package_str ~on:' ' in
+          let+ () = Sandbox.install_packages sandbox packages in
+          let (_ : Ojs.t option Promise.t) =
+            Vscode.Commands.executeCommand
+              (module Ojs)
+              ~command:Extension_consts.Commands.refresh_switches ~args:[]
+          in
+          let (_ : Ojs.t option Promise.t) =
+            Vscode.Commands.executeCommand
+              (module Ojs)
+              ~command:Extension_consts.Commands.refresh_sandbox ~args:[]
+          in
+          ()
+      in
+      ()
+    in
+    Extension_commands.register Extension_consts.Commands.install_sandbox
+      handler
 end
 
 let getTreeItem ~element = `Promise (Dependency.to_treeitem element)

@@ -44,6 +44,12 @@ module Opam_parser = struct
     | _ :: rest -> list name rest
 end
 
+module Opam_path = struct
+  let package_dir root pkg = Path.(root / ".opam-switch" / "packages" / pkg)
+
+  let switch_state root = Path.(root / ".opam-switch" / "switch-state")
+end
+
 module Switch = struct
   type t =
     | Local of Path.t  (** if switch name is directory name where it's stored *)
@@ -99,13 +105,11 @@ end = struct
   let of_switch opam switch =
     let open Promise.Result.Syntax in
     let* path = Switch.path opam switch in
-    let switch_state_filepath =
-      Path.(path / ".opam-switch" / "switch-state") |> Path.to_string
-    in
+    let switch_state_filepath = Opam_path.switch_state path |> Path.to_string in
     let+ file_content =
       Fs.readFile switch_state_filepath |> Promise.map Result.return
     in
-    let OpamParserTypes.{ file_contents; _ } =
+    let { OpamParserTypes.file_contents; _ } =
       OpamParser.FullPos.string file_content switch_state_filepath
       |> OpamParser.FullPos.to_opamfile
     in
@@ -134,18 +138,12 @@ module Package = struct
       (* TODO: check if file path exists *)
       let opam_filepath = Path.(path / "opam") |> Path.to_string in
       let+ file_content = Fs.readFile opam_filepath in
-      let OpamParserTypes.{ file_contents; _ } =
+      let { OpamParserTypes.file_contents; _ } =
         OpamParser.FullPos.string file_content opam_filepath
         |> OpamParser.FullPos.to_opamfile
       in
       let version = String.concat version_parts ~sep:"." in
       Some { path; name; version; items = file_contents }
-
-  let make ~name ~version ~opam_path =
-    let path =
-      Path.(opam_path / ".opam-switch" / "install" / (name ^ "." ^ version))
-    in
-    of_path path
 
   let path t = t.path
 
@@ -171,11 +169,50 @@ module Package = struct
       | _ :: rest -> parser rest
     in
     parser t.items
+
+  let has_dependencies t =
+    match depends t with
+    | None
+    | Some [] ->
+      false
+    | _ -> true
+
+  let get_switch_package name ~package_path =
+    let open Promise.Syntax in
+    let* l = Node.Fs.readDir (Path.to_string package_path) in
+    match l with
+    | Error _ -> Promise.return None
+    | Ok l ->
+      Promise.List.find_map
+        (fun fpath ->
+          let basename = Filename.basename fpath in
+          if String.is_prefix basename ~prefix:name then
+            of_path Path.(package_path / fpath)
+          else
+            Promise.return None)
+        l
+
+  let dependencies package =
+    match depends package with
+    | None ->
+      Promise.return
+        (Error "Could not get the root packaged from the switch state")
+    | Some l ->
+      Promise.List.filter_map
+        (fun pkg ->
+          let package_path =
+            (* The package path is never the root, so it's safe to use
+               [value_exn] *)
+            Path.parent (path package) |> fun x -> Option.value_exn x
+          in
+          get_switch_package pkg ~package_path)
+        l
+      |> Promise.map Result.return
 end
 
 let switch_arg switch = "--switch=" ^ Switch.name switch
 
-let exec t switch args =
+let exec t switch ~args =
   Cmd.Spawn (Cmd.append t ("exec" :: switch_arg switch :: "--" :: args))
 
 let parse_switch_list out =
@@ -217,6 +254,17 @@ let switch_remove t switch =
   let name = Switch.name switch in
   Cmd.Spawn (Cmd.append t [ "switch"; "remove"; name; "-y" ])
 
+let install t switch packages =
+  Cmd.Spawn (Cmd.append t ("install" :: switch_arg switch :: packages))
+
+let update t = Cmd.Spawn (Cmd.append t [ "update" ])
+
+let upgrade t switch =
+  Cmd.Spawn (Cmd.append t [ "upgrade"; switch_arg switch; "-y" ])
+
+let remove t switch packages =
+  Cmd.Spawn (Cmd.append t ("remove" :: switch_arg switch :: "-y" :: packages))
+
 let switch_compiler t switch =
   let open Promise.Syntax in
   let+ switch_state = Switch_state.of_switch t switch in
@@ -226,68 +274,27 @@ let switch_compiler t switch =
     let compilers = Switch_state.compilers switch_state in
     Option.bind compilers ~f:List.hd
 
-let packages t switch =
+let packages_from_switch_state_field t switch callback =
   let open Promise.Result.Syntax in
   let* switch_state = Switch_state.of_switch t switch in
-  match Switch_state.installed switch_state with
-  | None ->
-    Promise.return
-      (Error "Could not get the installed packaged from the switch state")
+  match callback switch_state with
   | Some l ->
     let* path = Switch.path t switch in
     Promise.List.filter_map
       (fun name ->
-        let packages_path = Path.(path / ".opam-switch/" / "packages" / name) in
-        Package.of_path packages_path)
+        let package_path = Opam_path.package_dir path name in
+        Package.of_path package_path)
       l
     |> Promise.map Result.return
+  | None ->
+    Promise.return (Error "Could not get the packages from the switch state")
+
+let packages t switch =
+  packages_from_switch_state_field t switch Switch_state.installed
 
 let root_packages t switch =
-  let open Promise.Result.Syntax in
-  let* switch_state = Switch_state.of_switch t switch in
-  match Switch_state.root switch_state with
-  | None ->
-    Promise.return
-      (Error "Could not get the root packaged from the switch state")
-  | Some l ->
-    let* path = Switch.path t switch in
-    Promise.List.filter_map
-      (fun name ->
-        let packages_path = Path.(path / ".opam-switch/" / "packages" / name) in
-        Package.of_path packages_path)
-      l
-    |> Promise.map Result.return
+  packages_from_switch_state_field t switch Switch_state.root
 
-let package_uninstall t switch package =
-  exec t switch [ "uninstall"; Package.name package ]
-
-let get_switch_package name ~package_path =
-  let open Promise.Syntax in
-  let* l = Node.Fs.readDir (Path.to_string package_path) in
-  match l with
-  | Error _ -> Promise.return None
-  | Ok l ->
-    Promise.List.find_map
-      (fun fpath ->
-        let basename = Filename.basename fpath in
-        if String.is_prefix basename ~prefix:name then
-          Package.of_path Path.(package_path / fpath)
-        else
-          Promise.return None)
-      l
-
-let package_dependencies package =
-  match Package.depends package with
-  | None ->
-    Promise.return
-      (Error "Could not get the root packaged from the switch state")
-  | Some l ->
-    Promise.List.filter_map
-      (fun pkg ->
-        let package_path =
-          (* The package path is never the root, so it's safe to use [value_exn] *)
-          Path.parent (Package.path package) |> fun x -> Option.value_exn x
-        in
-        get_switch_package pkg ~package_path)
-      l
-    |> Promise.map Result.return
+let package_remove t switch packages =
+  let names = List.map ~f:Package.name packages in
+  remove t switch names

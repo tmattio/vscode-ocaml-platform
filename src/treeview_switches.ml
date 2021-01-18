@@ -48,12 +48,11 @@ module Dependency = struct
 
   let collapsible_state = function
     | Switch _ -> Vscode.TreeItemCollapsibleState.Collapsed
-    | Package dep -> (
-      match Opam.Package.depends dep with
-      | Some []
-      | None ->
+    | Package dep ->
+      if Opam.Package.has_dependencies dep then
+        TreeItemCollapsibleState.Collapsed
+      else
         TreeItemCollapsibleState.None
-      | _ -> TreeItemCollapsibleState.Collapsed )
 
   let to_treeitem dependency =
     let open Promise.Syntax in
@@ -84,17 +83,11 @@ module Dependency = struct
         let names = packages |> List.map ~f:(fun n -> Package n) in
         Promise.return (Some names)
       | Error err ->
-        let* _ =
-          Vscode.Window.showInformationMessage
-            ~message:
-              (Printf.sprintf
-                 "An error occured while reading the switch dependencies: %s"
-                 err)
-            ()
-        in
+        show_message `Info
+          "An error occured while reading the switch dependencies: %s" err;
         Promise.return None )
     | Package pkg -> (
-      let+ deps = Opam.package_dependencies pkg in
+      let+ deps = Opam.Package.dependencies pkg in
       match deps with
       | Error _ -> None
       | Ok packages -> Some (List.map ~f:(fun x -> Package x) packages) )
@@ -120,6 +113,11 @@ module Command = struct
               Vscode.Commands.executeCommand
                 (module Ojs)
                 ~command:Extension_consts.Commands.refresh_switches ~args:[]
+            in
+            let (_ : Ojs.t option Promise.t) =
+              Vscode.Commands.executeCommand
+                (module Ojs)
+                ~command:Extension_consts.Commands.refresh_sandbox ~args:[]
             in
             show_message `Info "The switch has been removed successfully." )
       in
@@ -198,12 +196,6 @@ let register extension =
     let disposable =
       Commands.registerCommand
         ~command:Extension_consts.Commands.refresh_switches
-        ~callback:(fun ~args:_ -> EventEmitter.fire event_emitter None)
-    in
-    ExtensionContext.subscribe extension ~disposable;
-
-    let disposable =
-      Commands.registerCommand ~command:Extension_consts.Commands.remove_switch
         ~callback:(fun ~args:_ -> EventEmitter.fire event_emitter None)
     in
     ExtensionContext.subscribe extension ~disposable
