@@ -1,5 +1,5 @@
 {
-  "name": "ocaml",
+  "name": "ocaml-platform",
   "displayName": "OCaml",
   "description": "Official OCaml Support from OCamlLabs",
   "license": "MIT",
