@@ -3,7 +3,7 @@
   "displayName": "OCaml Platform",
   "description": "Official OCaml Support from OCamlLabs",
   "license": "MIT",
-  "version": "1.8.2",
+  "version": "1.8.4",
   "publisher": "ocamllabs",
   "repository": {
     "type": "git",
@@ -15,7 +15,7 @@
   "homepage": "https://github.com/ocamllabs/vscode-ocaml-platform",
   "main": "./dist/vscode_ocaml_platform.bc.js",
   "engines": {
-    "vscode": "^1.55.0"
+    "vscode": "^1.57.0"
   },
   "categories": [
     "Programming Languages"
@@ -32,6 +32,10 @@
     "onCommand:ocaml.select-sandbox",
     "onCommand:ocaml.open-terminal",
     "onCommand:ocaml.open-terminal-select",
+    "onCommand:ocaml.open-ast-explorer-to-the-side",
+    "onCommand:ocaml.show-preprocessed-document",
+    "onCommand:ocaml.open-pp-editor-and-ast-explorer",
+    "onCustomEditor:ast-editor",
     "workspaceContains:**/dune-project",
     "workspaceContains:**/*.opam",
     "workspaceContains:**/*.ml",
@@ -181,6 +185,16 @@
         }
       },
       {
+        "command": "ocaml.next-hole",
+        "category": "OCaml",
+        "title": "Jump to Next Typed Hole"
+      },
+      {
+        "command": "ocaml.prev-hole",
+        "category": "OCaml",
+        "title": "Jump to Previous Typed Hole"
+      },
+      {
         "command": "ocaml.current-dune-file",
         "category": "OCaml",
         "title": "Open Dune File (located in the same folder)"
@@ -194,6 +208,31 @@
         "command": "ocaml.evaluate-selection",
         "category": "OCaml",
         "title": "Evaluate Selection"
+      },
+      {
+        "command": "ocaml.open-ast-explorer-to-the-side",
+        "category": "OCaml",
+        "title": "Open AST explorer"
+      },
+      {
+        "command": "ocaml.show-preprocessed-document",
+        "category": "OCaml",
+        "title": "Show Preprocessed Document"
+      },
+      {
+        "command": "ocaml.reveal-ast-node",
+        "category": "OCaml",
+        "title": "Reveal Ast Node"
+      },
+      {
+        "command": "ocaml.switch-hover-mode",
+        "category": "OCaml",
+        "title": "Switch to hover AST reveal mode"
+      },
+      {
+        "command": "ocaml.open-pp-editor-and-ast-explorer",
+        "category": "OCaml",
+        "title": "Open both Preprocessed Document and AST explorer to the side"
       }
     ],
     "keybindings": [
@@ -212,6 +251,14 @@
       },
       {
         "command": "editor.action.codeAction",
+        "key": "Alt+C",
+        "args": {
+          "kind": "construct"
+        },
+        "when": "editorLangId == ocaml"
+      },
+      {
+        "command": "editor.action.codeAction",
         "key": "Alt+P",
         "args": {
           "kind": "inferred_intf"
@@ -222,6 +269,26 @@
         "command": "ocaml.evaluate-selection",
         "key": "Shift+Enter",
         "when": "editorTextFocus && editorLangId == ocaml || editorTextFocus && editorLangId == ocaml.interface || editorTextFocus && editorLangId == reason || editorTextFocus && editorLangId == ocaml.ocamllex || editorTextFocus && editorLangId == ocaml.menhir"
+      },
+      {
+        "command": "ocaml.next-hole",
+        "key": "Alt+L",
+        "when": "editorLangId == ocaml || editorLangId == ocaml.interface || editorLangId == reason || editorLangId == ocaml.ocamllex"
+      },
+      {
+        "command": "ocaml.prev-hole",
+        "key": "Shift+Alt+L",
+        "when": "editorLangId == ocaml || editorLangId == ocaml.interface || editorLangId == reason || editorLangId == ocaml.ocamllex"
+      },
+      {
+        "command": "ocaml.reveal-ast-node",
+        "key": "Alt+N",
+        "when": "editorTextFocus && editorLangId == ocaml || editorLangId == ocaml.interface "
+      },
+      {
+        "command": "ocaml.switch-hover-mode",
+        "key": "Alt+H",
+        "when": "editorTextFocus && editorLangId == ocaml || editorLangId == ocaml.interface "
       }
     ],
     "menus": {
@@ -230,12 +297,25 @@
           "command": "ocaml.evaluate-selection",
           "group": "OCaml",
           "when": "editorTextFocus && editorLangId == ocaml || editorTextFocus && editorLangId == ocaml.interface || editorTextFocus && editorLangId == reason || editorTextFocus && editorLangId == ocaml.ocamllex || editorTextFocus && editorLangId == ocaml.menhir"
+        },
+        {
+          "command": "ocaml.reveal-ast-node",
+          "group": "OCaml",
+          "when": "editorTextFocus && editorLangId == ocaml || editorTextFocus && editorLangId == ocaml.interface"
         }
       ],
       "commandPalette": [
         {
           "command": "ocaml.current-dune-file",
           "when": "editorIsOpen"
+        },
+        {
+          "command": "ocaml.next-hole",
+          "when": "editorLangId == ocaml || editorLangId == ocaml.interface || editorLangId == reason || editorLangId == ocaml.ocamllex"
+        },
+        {
+          "command": "ocaml.prev-hole",
+          "when": "editorLangId == ocaml || editorLangId == ocaml.interface || editorLangId == reason || editorLangId == ocaml.ocamllex"
         },
         {
           "command": "ocaml.refresh-switches",
@@ -324,12 +404,20 @@
       ]
     },
     "configuration": {
-      "title": "OCaml configuration",
+      "title": "OCaml Platform",
       "properties": {
         "ocaml.sandbox": {
           "type": "object",
           "default": null,
           "description": "Determines where to find the sandbox for a given project"
+        },
+        "ocaml.server.extraEnv": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "default": null,
+          "markdownDescription": "Extra environment variables that will be passed to OCaml LSP executable. Useful for debugging purposes mostly."
         },
         "ocaml.dune.autoDetect": {
           "type": "boolean",
@@ -826,6 +914,21 @@
         "fileMatch": "esy.json",
         "url": "https://raw.githubusercontent.com/esy/esy-schema/master/esySchema.json"
       }
+    ],
+    "customEditors": [
+      {
+        "viewType": "ast-editor",
+        "displayName": "OCaml AST preview",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.ml"
+          },
+          {
+            "filenamePattern": "*.mli"
+          }
+        ]
+      }
     ]
   },
   "scripts": {
@@ -843,14 +946,14 @@
     "vscode-languageclient": "7.0.0"
   },
   "devDependencies": {
-    "@types/vscode": "1.55.0",
-    "esbuild": "0.11.14",
-    "fs-extra": "9.1.0",
-    "mocha": "7.2.0",
+    "@types/vscode": "1.57.0",
+    "esbuild": "0.13.4",
+    "fs-extra": "10.0.0",
+    "mocha": "9.1.2",
     "npm-run-all": "4.1.5",
     "ovsx": "0.1.0-next.97d460c",
-    "prettier": "2.2.1",
-    "vsce": "1.87.1",
-    "vscode-test": "1.5.2"
+    "prettier": "2.4.1",
+    "vsce": "1.100.1",
+    "vscode-test": "1.6.1"
   }
 }
