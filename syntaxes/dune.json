@@ -623,7 +623,22 @@
                        },
                     "patterns": [{"include": "#general"}]
                    }]
-               }
+               },
+               {
+                "name": "run/chdir/setenv/with-stdout-to/with-stderr-to/with-outputs-to/ignore-stdout/ignore-stderr/ignore-outputs/progn/echo/cat/copy/copy#/system/bash/write-file/diff",
+                "begin": "\\([[:space:]]*(run|chdir|setenv|with-stdout-to|with-stderr-to|with-outputs-to|ignore-stdout|ignore-stderr|ignore-outputs|progn|echo|cat|copy|copy#|system|bash|write-file|diff\\?)[[:space:]]",
+                "end": "\\)",
+                "beginCaptures": {
+                  "1": {
+                    "name": "entity.name.function.action.dune"
+                  }
+                },
+                "patterns": [
+                  {
+                    "include": "$self"
+                  }
+                ]
+              }
         ]},
       
   
