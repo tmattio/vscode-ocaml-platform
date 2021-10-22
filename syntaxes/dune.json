@@ -30,8 +30,9 @@
                 "begin": "\\([[:space:]]*(name|public_name|package)\\b",
                 "end": "\\)",
                 "beginCaptures": {
-                  "1": { "name": "variable.other.declaration.dune"}
+                  "1": { "name": "keyword.language.dune"}
                 },
+                "contentName": "variable.other.declaration.dune",
                 "patterns": [{ "include": "#general" }]
               },
               {
@@ -191,8 +192,9 @@
               "begin": "\\([[:space:]]*(old_public_name|new_public_name)\\b",
               "end": "\\)",
               "beginCaptures": {
-                "1": { "name": "variable.declaration.language.dune" }
+                "1": { "name": "keyword.language.dune" }
               },
+              "contentName": "variable.declaration.other.dune",
               "patterns": [{ "include": "#general" }]
             }]
           },
@@ -456,7 +458,6 @@
                 "beginCaptures": {
                   "1": { "name": "keyword.language.dune" }
                    },
-                "contentName": "variable.other.declaration.dune",
                 "patterns": [{"include": "#general"}]
              },
              {
@@ -484,7 +485,6 @@
                 "beginCaptures": {
                   "1": { "name": "keyword.language.dune" }
                    },
-                "contentName": "variable.other.declaration.dune",
                 "patterns": [{"include": "#general"}]
              },
              {
@@ -529,7 +529,6 @@
                 "beginCaptures": {
                   "1": { "name": "keyword.language.dune" }
                    },
-                "contentName": "variable.other.declaration.dune",
                 "patterns": [{
                     "comment": "name/package/synopsis/modules/libraries/flags/mode/theories",
                     "begin": "\\([[:space:]]*(name|package|synopsis|modules|libraries|flags|mode|theories)\\b",
@@ -571,7 +570,6 @@
                     "beginCaptures": {
                       "1": { "name": "keyword.language.dune" }
                        },
-                    "contentName": "variable.other.declaration.dune",
                     "patterns": [{"include": "#general"}]
                    }]
                },
@@ -623,7 +621,6 @@
                     "beginCaptures": {
                       "1": { "name": "keyword.language.dune" }
                        },
-                    "contentName": "variable.other.declaration.dune",
                     "patterns": [{"include": "#general"}]
                    }]
                }
