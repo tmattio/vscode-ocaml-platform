@@ -88,8 +88,8 @@
                   "1": { "name": "keyword.language.dune" }
                 },
                 "patterns": [{
-                    "comment": "no_preprocessing/action/pps/staged_pps/future_syntax",
-                    "begin": "\\([[:space:]]*(no_preprocessing|action|pps|staged_pps|future_syntax)\\b",
+                    "comment": "pps/no_preprocessing/action/staged_pps/future_syntax",
+                    "begin": "\\([[:space:]]*(pps|no_preprocessing|action|staged_pps|future_syntax)\\b",
                     "end": "\\)",
                     "beginCaptures": {
                       "1": { "name": "keyword.language.dune" }
@@ -200,14 +200,24 @@
           },
           {
             "comment": "executable/executables",
-            "begin": "\\([[:space:]]*(executables*)\\b",
+            "begin": "\\([[:space:]]*(executable|executables)\\b",
             "end": "\\)",
             "beginCaptures": {
               "1": { "name": "keyword.language.dune" }
             },
             "patterns": [{
-              "comment": "name/public_name/package/libraries/link_flags/link_deps/modules/root_module/preprocess/preprocessor_deps/modules_without_implementation/optional/enabled_if/promote/foreign_stubs/foreign_archives/forbidden_libraries/embed_in_plugin_libraries",
-              "begin": "\\([[:space:]]*(name|public_name|package/libraries|link_flags|link_deps|modules|root_module|preprocess|preprocessor_deps|modules_without_implementation|optional|enabled_if|promote|foreign_stubs|foreign_archives|forbidden_libraries|embed_in_plugin_libraries)\\b",
+              "comment": "name/public_name",
+              "begin": "\\([[:space:]]*(name|public_name)\\b",
+              "end": "\\)",
+              "beginCaptures": {
+                "1": { "name": "keyword.language.dune" }
+              },
+              "contentName": "variable.declaration.other.dune",
+              "patterns": [{ "include": "#general" }]
+              },
+            {
+              "comment": "package/libraries/link_flags/link_deps/modules/root_module/preprocess/pps/preprocessor_deps/modules_without_implementation/optional/enabled_if/promote/foreign_stubs/foreign_archives/forbidden_libraries/embed_in_plugin_libraries/modes",
+              "begin": "\\([[:space:]]*(package|libraries|link_flags|link_deps|modules|root_module|preprocess|pps|preprocessor_deps|modules_without_implementation|optional|enabled_if|promote|foreign_stubs|foreign_archives|forbidden_libraries|embed_in_plugin_libraries|modes)\\b",
               "end": "\\)",
               "beginCaptures": {
                 "1": { "name": "keyword.language.dune" }
@@ -223,24 +233,31 @@
               "1": { "name": "keyword.language.dune" }
             },
             "patterns": [{
-              "comment": "target/targets/deps/action/mode/fallback/locks/alias/package/enabled_if",
-              "begin": "\\([[:space:]]*(targets*|deps|action|mode|fallback|locks|alias|package|enabled_if)\\b",
+              "comment": "target/targets/deps/action/fallback/locks/alias/package/enabled_if",
+              "begin": "\\([[:space:]]*(targets*|deps|action|fallback|locks|alias|package|enabled_if)\\b",
               "end": "\\)",
               "beginCaptures": {
-                "1": { "name": "constant.language.variable.action.dune" }
+                "1": { "name": "keyword.language.dune" }
+              },
+              "patterns": [{ "include": "#general" }]
+            },
+            {
+              "comment": "mode",
+              "begin": "\\([[:space:]]*(mode)\\b",
+              "end": "\\)",
+              "beginCaptures": {
+                "1": { "name": "keyword.language.dune" }
               },
               "patterns": [{
-                "comment": "standard/promote/promote-until-clean/promote-into/promote-until-clean-into/into/only",
-                "begin": "\\([[:space:]]*(standard|promote|promote-until-clean|promote-into|promote-until-clean-into|into|only)\\b",
+                "comment": "standard/promote/promote-until-clean/promote-into/until-clean/promote-until-clean-into/into/only",
+                "begin": "\\([[:space:]]*(standard|promote|promote-until-clean|promote-into|until-clean|promote-until-clean-into|into|only)\\b",
                 "end": "\\)",
                 "beginCaptures": {
                   "1": { "name": "constant.language.variable.action.dune" }
                 },
                 "patterns": [{ "include": "#general" }]
-              }, 
-              { "include": "#general" }]
-            },
-            { "include": "#general" }]
+              }]
+            }]
           },
           {
             "comment": "ocamllex",
@@ -623,22 +640,7 @@
                        },
                     "patterns": [{"include": "#general"}]
                    }]
-               },
-               {
-                "name": "run/chdir/setenv/with-stdout-to/with-stderr-to/with-outputs-to/ignore-stdout/ignore-stderr/ignore-outputs/progn/echo/cat/copy/copy#/system/bash/write-file/diff",
-                "begin": "\\([[:space:]]*(run|chdir|setenv|with-stdout-to|with-stderr-to|with-outputs-to|ignore-stdout|ignore-stderr|ignore-outputs|progn|echo|cat|copy|copy#|system|bash|write-file|diff\\?)[[:space:]]",
-                "end": "\\)",
-                "beginCaptures": {
-                  "1": {
-                    "name": "entity.name.function.action.dune"
-                  }
-                },
-                "patterns": [
-                  {
-                    "include": "$self"
-                  }
-                ]
-              }
+               }
         ]},
       
   
