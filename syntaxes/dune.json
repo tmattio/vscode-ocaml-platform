@@ -213,8 +213,17 @@
                 "patterns": [{ "include": "#general" }]
               },
               {
-                "comment": "private_modules/allow_overlapping_dependencies/enabled_if/root_module",
-                "begin": "\\([[:space:]]*(private_modules|allow_overlapping_dependencies|enabled_if|root_module)\\b",
+                "comment": "private_modules",
+                "begin": "\\([[:space:]]*(private_modules)\\b",
+                "end": "\\)",
+                "beginCaptures": {
+                  "1": { "name": "keyword.language.dune" }
+                },
+                "patterns": [{ "include": "#general" }]
+              },
+              {
+                "comment": "allow_overlapping_dependencies",
+                "begin": "\\([[:space:]]*(allow_overlapping_dependencies)\\b",
                 "end": "\\)",
                 "beginCaptures": {
                   "1": { "name": "keyword.language.dune" }
@@ -263,9 +272,7 @@
                   "patterns": [{ "include": "#general" }]
                 },
                 { "include": "#general" }]
-              },
-              { "include": "#general" }
-            ]
+              }]
           },
           {
             "comment": "foreign_library",
@@ -321,8 +328,8 @@
               "patterns": [{ "include": "#general" }]
               },
             {
-              "comment": "package/libraries",
-              "begin": "\\([[:space:]]*(package|libraries)\\b",
+              "comment": "package",
+              "begin": "\\([[:space:]]*(package)\\b",
               "end": "\\)",
               "beginCaptures": {
                 "1": { "name": "keyword.language.dune" }
@@ -330,8 +337,8 @@
               "patterns": [{ "include": "#general" }]
             },
             {
-              "comment": "link_flags/link_deps",
-              "begin": "\\([[:space:]]*(|link_flags|link_deps)\\b",
+              "comment": "libraries",
+              "begin": "\\([[:space:]]*(libraries)\\b",
               "end": "\\)",
               "beginCaptures": {
                 "1": { "name": "keyword.language.dune" }
@@ -339,8 +346,35 @@
               "patterns": [{ "include": "#general" }]
             },
             {
-              "comment": "modules/root_module",
-              "begin": "\\([[:space:]]*(modules|root_module)\\b",
+              "comment": "link_flags",
+              "begin": "\\([[:space:]]*(link_flags)\\b",
+              "end": "\\)",
+              "beginCaptures": {
+                "1": { "name": "keyword.language.dune" }
+              },
+              "patterns": [{ "include": "#general" }]
+            },
+            {
+              "comment": "link_deps",
+              "begin": "\\([[:space:]]*(link_deps)\\b",
+              "end": "\\)",
+              "beginCaptures": {
+                "1": { "name": "keyword.language.dune" }
+              },
+              "patterns": [{ "include": "#general" }]
+            },
+            {
+              "comment": "modules",
+              "begin": "\\([[:space:]]*(modules)\\b",
+              "end": "\\)",
+              "beginCaptures": {
+                "1": { "name": "keyword.language.dune" }
+              },
+              "patterns": [{ "include": "#general" }]
+            },
+            {
+              "comment": "root_module",
+              "begin": "\\([[:space:]]*(root_module)\\b",
               "end": "\\)",
               "beginCaptures": {
                 "1": { "name": "keyword.language.dune" }
@@ -390,7 +424,15 @@
               "beginCaptures": {
                 "1": { "name": "keyword.language.dune" }
               },
-              "patterns": [{ "include": "#general" }]
+              "patterns": [{
+                "comment": "languages/names/flags",
+                "begin": "\\([[:space:]]*(languages|names|flags)\\b",
+                "end": "\\)",
+                "beginCaptures": {
+                  "1": { "name": "keyword.language.dune" }
+                },
+                "patterns": [{ "include": "#general" }]
+              }]
             },
             {
               "comment": "foreign_archives",
@@ -399,7 +441,15 @@
               "beginCaptures": {
                 "1": { "name": "keyword.language.dune" }
               },
-              "patterns": [{ "include": "#general" }]
+              "patterns": [{
+                "comment": "languages/names/flags",
+                "begin": "\\([[:space:]]*(languages|names|flags)\\b",
+                "end": "\\)",
+                "beginCaptures": {
+                  "1": { "name": "keyword.language.dune" }
+                },
+                "patterns": [{ "include": "#general" }]
+              }]
             },
             {
               "comment": "forbidden_libraries",
@@ -447,7 +497,7 @@
             },
             "patterns": [{
               "comment": "target/targets/deps/fallback/locks/package/enabled_if",
-              "begin": "\\([[:space:]]*(targets*|deps|fallback|locks|package|enabled_if)\\b",
+              "begin": "\\([[:space:]]*(targets|target|deps|fallback|locks|package|enabled_if)\\b",
               "end": "\\)",
               "beginCaptures": {
                 "1": { "name": "" }
@@ -671,23 +721,6 @@
               "1": { "name": "keyword.language.dune" }
             },
             "patterns": [{"include": "#general"}]
-          },
-          {
-              "comment": "tests",
-              "begin": "\\([[:space:]]*(tests)\\b",
-              "end": "\\)",
-              "beginCaptures": {
-                "1": { "name": "keyword.language.dune" }
-              },
-              "patterns": [{
-                "comment": "names/libraries/action",
-                "begin": "\\([[:space:]]*(names|libraries|action)\\b",
-                "end": "\\)",
-                "beginCaptures": {
-                  "1": { "name": "keyword.language.dune" }
-                },
-                "patterns": [{"include": "#general"}]
-              }]
           },
           {
             "comment": "test",
